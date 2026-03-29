@@ -8,18 +8,9 @@ from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from src.astrologico.api.models import MoonResponse, MoonInterpretationResponse
-from src.astrologico.core import AstrologicalCalculator
-from src.astrologico.ai import AstrologicalInterpreter
-from src.astrologico.api.settings import settings
+from src.astrologico.api.dependencies import get_calculator, get_interpreter
 
 router = APIRouter(prefix="/api/v1", tags=["moon"])
-
-# Initialize components
-calculator = AstrologicalCalculator()
-interpreter = AstrologicalInterpreter(
-    api_provider=settings.ai_provider,
-    api_key=settings.openai_api_key or settings.anthropic_api_key
-)
 
 
 @router.get("/moon", response_model=MoonResponse)
@@ -37,6 +28,9 @@ async def get_moon(
     Returns:
         Moon phase, name, and illumination percentage
     """
+    calculator = get_calculator()
+    interpreter = get_interpreter()
+    
     try:
         # Parse datetime
         if now:
@@ -92,6 +86,8 @@ async def interpret_moon(
     Note:
         Requires AI provider API key to be configured
     """
+    interpreter = get_interpreter()
+    
     if not interpreter.client:
         raise HTTPException(
             status_code=503,

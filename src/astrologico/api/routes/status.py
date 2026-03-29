@@ -6,18 +6,10 @@ Provides API health and status information.
 
 from fastapi import APIRouter
 from src.astrologico.api.models import HealthCheckResponse, StatusResponse
-from src.astrologico.core import AstrologicalCalculator
-from src.astrologico.ai import AstrologicalInterpreter
+from src.astrologico.api.dependencies import get_calculator, get_interpreter
 from src.astrologico.api.settings import settings
 
 router = APIRouter(prefix="/api/v1", tags=["status"])
-
-# Initialize components
-calculator = AstrologicalCalculator()
-interpreter = AstrologicalInterpreter(
-    api_provider=settings.ai_provider,
-    api_key=settings.openai_api_key or settings.anthropic_api_key
-)
 
 
 @router.get("/health", response_model=HealthCheckResponse)
@@ -27,6 +19,8 @@ async def health_check():
     
     Returns health status of calculator and interpreter components.
     """
+    interpreter = get_interpreter()
+    
     return {
         "status": "healthy",
         "calculator": "ready",
@@ -45,7 +39,7 @@ async def get_status():
     - AI provider information
     - Available endpoints
     """
-    return {
+    interpreter = get_interpreter()
         "api_version": settings.api_version,
         "calculator_status": "operational",
         "interpreter_status": "operational" if interpreter.client else "no_api_key",

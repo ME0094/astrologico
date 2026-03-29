@@ -14,6 +14,18 @@ from src.astrologico.api.models import (
     LocationInput,
     DateTimeInput
 )
+from src.astrologico.api.dependencies import (
+    get_calculator,
+    get_interpreter,
+    reset_dependencies
+)
+from src.astrologico.api.utils import (
+    validate_coordinates,
+    parse_datetime,
+    format_chart_response,
+    validate_and_parse_location,
+    standardize_response
+)
 
 __all__ = [
     'app',
@@ -24,5 +36,13 @@ __all__ = [
     'CompatibilityRequest',
     'QuestionRequest',
     'LocationInput',
-    'DateTimeInput'
+    'DateTimeInput',
+    'get_calculator',
+    'get_interpreter',
+    'reset_dependencies',
+    'validate_coordinates',
+    'parse_datetime',
+    'format_chart_response',
+    'validate_and_parse_location',
+    'standardize_response'
 ]

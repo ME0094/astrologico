@@ -8,18 +8,10 @@ from datetime import datetime
 from typing import Optional, List, Dict
 from fastapi import APIRouter, HTTPException, Query
 from src.astrologico.api.models import AspectsResponse, AspectData, AspectsInterpretationResponse
-from src.astrologico.core import AstrologicalCalculator, validate_latitude, validate_longitude
-from src.astrologico.ai import AstrologicalInterpreter
-from src.astrologico.api.settings import settings
+from src.astrologico.api.dependencies import get_calculator, get_interpreter
+from src.astrologico.api.utils import validate_coordinates
 
 router = APIRouter(prefix="/api/v1", tags=["aspects"])
-
-# Initialize components
-calculator = AstrologicalCalculator()
-interpreter = AstrologicalInterpreter(
-    api_provider=settings.ai_provider,
-    api_key=settings.openai_api_key or settings.anthropic_api_key
-)
 
 
 @router.get("/aspects", response_model=AspectsResponse)
@@ -43,6 +35,8 @@ async def get_aspects(
     Returns:
         List of planetary aspects with angles and orbs
     """
+    calculator = get_calculator()
+    
     try:
         # Parse datetime
         if now:
@@ -59,10 +53,7 @@ async def get_aspects(
             dt = datetime.utcnow()
         
         # Validate location
-        if not (-90 <= lat <= 90):
-            raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-        if not (-180 <= lon <= 180):
-            raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+        validate_coordinates(lat, lon)
         
         # Validate orb
         if not (1 <= orb <= 12):
@@ -105,6 +96,8 @@ async def interpret_aspects(aspects: List[Dict]):
     Note:
         Requires AI provider API key to be configured
     """
+    interpreter = get_interpreter()
+    
     if not interpreter.client:
         raise HTTPException(
             status_code=503,

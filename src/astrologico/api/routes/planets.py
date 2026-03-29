@@ -8,12 +8,10 @@ from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from src.astrologico.api.models import PlanetsResponse
-from src.astrologico.core import AstrologicalCalculator
+from src.astrologico.api.dependencies import get_calculator
+from src.astrologico.api.utils import validate_coordinates
 
 router = APIRouter(prefix="/api/v1", tags=["planets"])
-
-# Initialize calculator
-calculator = AstrologicalCalculator()
 
 
 @router.get("/planets", response_model=PlanetsResponse)
@@ -35,6 +33,8 @@ async def get_planets(
     Returns:
         Planetary positions with coordinates and distances
     """
+    calculator = get_calculator()
+    
     try:
         # Parse datetime
         if now:
@@ -51,10 +51,7 @@ async def get_planets(
             dt = datetime.utcnow()
         
         # Validate location
-        if not (-90 <= lat <= 90):
-            raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-        if not (-180 <= lon <= 180):
-            raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+        validate_coordinates(lat, lon)
         
         # Calculate positions
         positions = calculator.calculate_planetary_positions(dt=dt, lat=lat, lon=lon)

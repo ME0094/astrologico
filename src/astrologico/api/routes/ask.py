@@ -2,6 +2,7 @@
 AI question answering routes.
 
 Provides endpoints for answering astrological questions with optional chart context.
+Organized by analysis type: questions, compatibility, transits.
 """
 
 from datetime import datetime
@@ -16,43 +17,23 @@ from src.astrologico.api.models import (
     TransitRequest,
     TransitsResponse
 )
-from src.astrologico.core import (
-    AstrologicalCalculator,
-    validate_latitude,
-    validate_longitude
-)
-from src.astrologico.ai import AstrologicalInterpreter
-from src.astrologico.api.settings import settings
+from src.astrologico.api.dependencies import get_calculator, get_interpreter
+from src.astrologico.api.utils import parse_datetime, validate_coordinates
 
 router = APIRouter(prefix="/api/v1", tags=["ai"])
 
-# Initialize components
-calculator = AstrologicalCalculator()
-interpreter = AstrologicalInterpreter(
-    api_provider=settings.ai_provider,
-    api_key=settings.openai_api_key or settings.anthropic_api_key
-)
+
+def _get_calculator():
+    """Get calculator dependency."""
+    return get_calculator()
 
 
-def _parse_datetime(datetime_input: DateTimeInput) -> datetime:
-    """Parse datetime from input model."""
-    if datetime_input.use_now:
-        return datetime.utcnow()
-    if datetime_input.datetime_str:
-        try:
-            return datetime.fromisoformat(datetime_input.datetime_str)
-        except ValueError as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid datetime format: {str(e)}"
-            )
-    raise HTTPException(
-        status_code=400,
-        detail="Specify datetime_str or set use_now=true"
-    )
+def _get_interpreter():
+    """Get interpreter dependency."""
+    return get_interpreter()
 
 
-def _format_chart_for_response(chart) -> dict:
+def _format_chart_for_response(chart, calculator, interpreter) -> dict:
     """Format ChartData object to dictionary for API response."""
     planets_data = {}
     for name, pos in chart.planets.items():
@@ -98,6 +79,9 @@ async def ask_question(request: QuestionRequest):
         - Simple question: {"question": "What does Mercury retrograde mean?"}
         - With chart context: {"question": "What career path suits me?", "datetime": {...}, "location": {...}}
     """
+    calculator = _get_calculator()
+    interpreter = _get_interpreter()
+    
     if not interpreter.client:
         raise HTTPException(
             status_code=503,
@@ -109,18 +93,15 @@ async def ask_question(request: QuestionRequest):
         
         # Generate chart context if provided
         if request.datetime and request.location:
-            dt = _parse_datetime(request.datetime)
+            dt = parse_datetime(request.datetime)
             lat = request.location.latitude
             lon = request.location.longitude
             
             # Validate location
-            if not (-90 <= lat <= 90):
-                raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-            if not (-180 <= lon <= 180):
-                raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+            validate_coordinates(lat, lon)
             
             chart = calculator.generate_chart(dt=dt, lat=lat, lon=lon)
-            chart_data = _format_chart_for_response(chart)
+            chart_data = _format_chart_for_response(chart, calculator, interpreter)
         
         # Answer the question
         answer = interpreter.answer_question(request.question, chart_data)
@@ -158,6 +139,9 @@ async def analyze_compatibility(request: CompatibilityRequest):
     Note:
         Requires AI provider API key to be configured
     """
+    calculator = _get_calculator()
+    interpreter = _get_interpreter()
+    
     if not interpreter.client:
         raise HTTPException(
             status_code=503,
@@ -166,8 +150,8 @@ async def analyze_compatibility(request: CompatibilityRequest):
     
     try:
         # Parse datetimes
-        dt1 = _parse_datetime(request.person1_datetime)
-        dt2 = _parse_datetime(request.person2_datetime)
+        dt1 = parse_datetime(request.person1_datetime)
+        dt2 = parse_datetime(request.person2_datetime)
         
         lat1 = request.person1_location.latitude
         lon1 = request.person1_location.longitude
@@ -175,19 +159,15 @@ async def analyze_compatibility(request: CompatibilityRequest):
         lon2 = request.person2_location.longitude
         
         # Validate locations
-        for lat in [lat1, lat2]:
-            if not (-90 <= lat <= 90):
-                raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-        for lon in [lon1, lon2]:
-            if not (-180 <= lon <= 180):
-                raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+        validate_coordinates(lat1, lon1)
+        validate_coordinates(lat2, lon2)
         
         # Generate charts
         chart1 = calculator.generate_chart(dt=dt1, lat=lat1, lon=lon1)
         chart2 = calculator.generate_chart(dt=dt2, lat=lat2, lon=lon2)
         
-        chart1_dict = _format_chart_for_response(chart1)
-        chart2_dict = _format_chart_for_response(chart2)
+        chart1_dict = _format_chart_for_response(chart1, calculator, interpreter)
+        chart2_dict = _format_chart_for_response(chart2, calculator, interpreter)
         
         # Analyze compatibility
         analysis = interpreter.analyze_compatibility(chart1_dict, chart2_dict)
@@ -221,6 +201,9 @@ async def analyze_transits(request: TransitRequest):
     Note:
         Requires AI provider API key to be configured
     """
+    calculator = _get_calculator()
+    interpreter = _get_interpreter()
+    
     if not interpreter.client:
         raise HTTPException(
             status_code=503,
@@ -229,24 +212,21 @@ async def analyze_transits(request: TransitRequest):
     
     try:
         # Parse datetimes
-        natal_dt = _parse_datetime(request.natal_datetime)
-        transit_dt = _parse_datetime(request.transit_datetime)
+        natal_dt = parse_datetime(request.natal_datetime)
+        transit_dt = parse_datetime(request.transit_datetime)
         
         lat = request.natal_location.latitude
         lon = request.natal_location.longitude
         
         # Validate location
-        if not (-90 <= lat <= 90):
-            raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-        if not (-180 <= lon <= 180):
-            raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+        validate_coordinates(lat, lon)
         
         # Generate charts
         natal_chart = calculator.generate_chart(dt=natal_dt, lat=lat, lon=lon)
         transit_chart = calculator.generate_chart(dt=transit_dt, lat=lat, lon=lon)
         
-        natal_dict = _format_chart_for_response(natal_chart)
-        transit_dict = _format_chart_for_response(transit_chart)
+        natal_dict = _format_chart_for_response(natal_chart, calculator, interpreter)
+        transit_dict = _format_chart_for_response(transit_chart, calculator, interpreter)
         
         # Generate transit analysis
         prompt = f"""Analyze the transits to a natal chart.

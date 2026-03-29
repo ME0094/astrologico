@@ -2,10 +2,11 @@
 Astrological chart routes.
 
 Provides endpoints for chart generation and interpretation.
+Routes are organized by chart-related operations.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
 from fastapi import APIRouter, HTTPException, Query
 from src.astrologico.api.models import (
     ChartRequest,
@@ -16,39 +17,24 @@ from src.astrologico.api.models import (
     LocationData,
     AspectData
 )
-from src.astrologico.core import AstrologicalCalculator
-from src.astrologico.ai import AstrologicalInterpreter
-from src.astrologico.api.settings import settings
+from src.astrologico.api.dependencies import get_calculator, get_interpreter
+from src.astrologico.api.utils import parse_datetime, validate_coordinates
+from src.astrologico.core import AspectDict
 
 router = APIRouter(prefix="/api/v1", tags=["chart"])
 
-# Initialize components
-calculator = AstrologicalCalculator()
-interpreter = AstrologicalInterpreter(
-    api_provider=settings.ai_provider,
-    api_key=settings.openai_api_key or settings.anthropic_api_key
-)
+
+def _get_calculator():
+    """Get calculator dependency."""
+    return get_calculator()
 
 
-def _parse_datetime(datetime_input: DateTimeInput) -> datetime:
-    """Parse datetime from input model."""
-    if datetime_input.use_now:
-        return datetime.utcnow()
-    if datetime_input.datetime_str:
-        try:
-            return datetime.fromisoformat(datetime_input.datetime_str)
-        except ValueError as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid datetime format: {str(e)}"
-            )
-    raise HTTPException(
-        status_code=400,
-        detail="Specify datetime_str or set use_now=true"
-    )
+def _get_interpreter():
+    """Get interpreter dependency."""
+    return get_interpreter()
 
 
-def _format_chart_for_response(chart: Any) -> dict:  # Returns dict ready for Pydantic validation
+def _format_chart_for_response(chart: Any, calculator: Any, interpreter: Any) -> dict:  # Returns dict ready for Pydantic validation
     """Format ChartData object to dictionary."""
     planets_data = {}
     for name, pos in chart.planets.items():
@@ -94,20 +80,20 @@ async def generate_chart(request: ChartRequest):
         Set include_interpretation=true to add AI insights (requires API key)
     """
     try:
+        calculator = _get_calculator()
+        interpreter = _get_interpreter()
+        
         # Parse datetime
-        dt = _parse_datetime(request.datetime)
+        dt = parse_datetime(request.datetime)
         
         # Validate location
         lat = request.location.latitude
         lon = request.location.longitude
-        if not (-90 <= lat <= 90):
-            raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-        if not (-180 <= lon <= 180):
-            raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+        validate_coordinates(lat, lon)
         
         # Generate chart
         chart = calculator.generate_chart(dt=dt, lat=lat, lon=lon)
-        response = _format_chart_for_response(chart)
+        response = _format_chart_for_response(chart, calculator, interpreter)
         
         # Add AI interpretation if requested
         if request.include_interpretation and interpreter.client:
@@ -153,6 +139,9 @@ async def quick_chart(
         /api/v1/chart/quick?now=true&lat=40.7128&lon=-74.0060
     """
     try:
+        calculator = _get_calculator()
+        interpreter = _get_interpreter()
+        
         # Parse datetime
         if now:
             dt = datetime.utcnow()
@@ -171,14 +160,11 @@ async def quick_chart(
             )
         
         # Validate location
-        if not (-90 <= lat <= 90):
-            raise HTTPException(status_code=400, detail="Latitude must be between -90 and 90")
-        if not (-180 <= lon <= 180):
-            raise HTTPException(status_code=400, detail="Longitude must be between -180 and 180")
+        validate_coordinates(lat, lon)
         
         # Generate chart
         chart = calculator.generate_chart(dt=dt, lat=lat, lon=lon)
-        response = _format_chart_for_response(chart)
+        response = _format_chart_for_response(chart, calculator, interpreter)
         
         # Add interpretation unless skipped
         if not no_interpretation and interpreter.client:
