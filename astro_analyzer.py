@@ -67,6 +67,17 @@ class AstroAnalyzer:
         """
         chart = self.calculator.generate_chart(birth_datetime, latitude, longitude)
         
+        # Convert ChartData to dict if needed
+        chart_dict = {
+            "planets": dict(chart.planets) if hasattr(chart, 'planets') else {},
+            "aspects": chart.aspects if hasattr(chart, 'aspects') else [],
+            "moon_phase": chart.moon_phase if hasattr(chart, 'moon_phase') else None,
+            "location": {
+                "latitude": latitude,
+                "longitude": longitude
+            }
+        }
+        
         report = {
             "metadata": {
                 "name": name,
@@ -77,7 +88,7 @@ class AstroAnalyzer:
                 },
                 "generated_at": datetime.utcnow().isoformat()
             },
-            "chart": chart,
+            "chart": chart_dict,
             "interpretations": {}
         }
         
@@ -88,11 +99,11 @@ class AstroAnalyzer:
             
             # Personality and life purpose
             report["interpretations"]["personality"] = \
-                self._analyze_personality(chart)
+                self._analyze_personality(chart_dict)
             
             # Life themes and patterns
             report["interpretations"]["life_themes"] = \
-                self._identify_life_themes(chart)
+                self._identify_life_themes(chart_dict)
         
         return report
 
@@ -137,9 +148,10 @@ class AstroAnalyzer:
                 birth_chart["location"]["latitude"],
                 birth_chart["location"]["longitude"]
             )
+            planets_dict = dict(transit_chart.planets) if hasattr(transit_chart, 'planets') else {}
             forecast["transit_dates"].append({
                 "date": current.isoformat(),
-                "planets": transit_chart.get("planets", {})
+                "planets": planets_dict
             })
             current += timedelta(days=5)  # Check every 5 days
         
@@ -281,8 +293,7 @@ class AstroAnalyzer:
             "sun_sign": "Your core identity and life purpose",
             "moon_sign": "Your emotional nature and inner world",
             "rising_sign": "How you appear to others",
-            "detailed": self.interpreter.generate_chart_summary(chart)
-            if self.use_ai else "Personality analysis requires AI"
+            "detailed": "Personality analysis requires AI (provide API keys)"
         }
 
     def _identify_life_themes(self, chart: Dict[str, Any]) -> List[str]:
