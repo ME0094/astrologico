@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Optional, Dict, List
 from pydantic import BaseModel
 import json
+import os
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,12 +69,13 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# Enable CORS
+# Enable CORS with configurable origins
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
