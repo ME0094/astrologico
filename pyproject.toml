@@ -107,7 +107,6 @@ astrologico = "src.astrologico.cli.main:main"
 # astrologico-gui = "src.astrologico.gui:main"
 
 [tool.setuptools]
-where = ["src"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -196,6 +195,8 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "api: marks tests for API endpoints",
+    "core: marks tests for core calculation modules",
 ]
 
 # ============= Coverage Configuration =============

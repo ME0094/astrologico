@@ -8,7 +8,7 @@ and insights generation with caching support.
 import json
 import os
 import hashlib
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 
 

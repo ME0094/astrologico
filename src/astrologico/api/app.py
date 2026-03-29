@@ -93,7 +93,11 @@ def create_app() -> FastAPI:
 
 
 # Create the application instance
-app = create_app()
+import sys
+if 'pytest' not in sys.modules:
+    app = create_app()
+else:
+    app = None
 
 
 if __name__ == "__main__":
