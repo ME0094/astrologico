@@ -1,6 +1,14 @@
 # Astrologico - Professional Astrological Calculation Suite
 
-A comprehensive, optimized astronomical and astrological calculation suite built for Debian/Linux systems. Astrologico provides accurate planetary positions, aspects, lunar phases, and complete natal chart generation.
+[![Tests](https://github.com/ME0094/astrologico/actions/workflows/tests.yml/badge.svg)](https://github.com/ME0094/astrologico/actions/workflows/tests.yml)
+[![Security Scan](https://github.com/ME0094/astrologico/actions/workflows/security.yml/badge.svg)](https://github.com/ME0094/astrologico/actions/workflows/security.yml)
+[![Code Quality](https://github.com/ME0094/astrologico/actions/workflows/lint.yml/badge.svg)](https://github.com/ME0094/astrologico/actions/workflows/lint.yml)
+[![Docker Build](https://github.com/ME0094/astrologico/actions/workflows/docker.yml/badge.svg)](https://github.com/ME0094/astrologico/actions/workflows/docker.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Security: 9.0/10](https://img.shields.io/badge/Security-9.0/10-brightgreen.svg)](./SECURITY.md)
+
+A comprehensive, optimized astronomical and astrological calculation suite built for production environments. Astrologico provides accurate planetary positions, aspects, lunar phases, complete natal chart generation, and AI-powered interpretation with a professional REST API.
 
 ## Features
 
@@ -144,13 +152,30 @@ Accuracy: ±0.001° for planetary positions (typical modern requirements)
 
 ```
 astrologico/
-├── venv/                  # Python virtual environment
-├── astrologico.py         # Core calculation engine
-├── cli.py                 # Command-line interface
-├── setup.py               # Package configuration
-├── requirements.txt       # Dependencies
-├── README.md              # This file
-└── ephemeris/             # Cached ephemeris data (auto-populated)
+├── .github/
+│   ├── workflows/              # GitHub Actions CI/CD pipelines
+│   │   ├── tests.yml           # Automated testing (Python 3.8-3.13)
+│   │   ├── security.yml        # Security scanning (Bandit, Safety)
+│   │   ├── lint.yml            # Code quality (Black, Flake8, MyPy)
+│   │   ├── docker.yml          # Docker image building
+│   │   └── dependencies.yml    # Dependency vulnerability checking
+├── .gitignore                  # Git ignore rules
+├── .env.example                # Environment variable template
+├── astrologico.py              # Core calculation engine (8.8 KB)
+├── cli.py                      # Command-line interface
+├── api_server.py               # FastAPI REST server (20+ endpoints)
+├── api_client.py               # REST API client library
+├── ai_interpreter.py           # AI interpretation engine
+├── advanced_analysis.py        # Advanced analysis tools
+├── setup.py                    # Package configuration
+├── requirements.txt            # Python dependencies (14 packages)
+├── Dockerfile                  # Container configuration
+├── docker-compose.yml          # Docker Compose orchestration
+├── SECURITY.md                 # Security documentation & best practices
+├── QUICKSTART.md               # 5-minute quick start guide
+├── AI_FEATURES.md              # Complete AI capabilities documentation
+├── README.md                   # This file
+└── de421.bsp                   # JPL ephemeris data file
 ```
 
 ## Dependencies
@@ -162,6 +187,22 @@ astrologico/
 - **astropy** (7.2+) - Professional astronomy suite
 - **numpy** (2.4+) - Numerical computations
 - **scipy** (1.17+) - Scientific computing
+
+### API & Web Framework
+- **FastAPI** (0.104+) - Modern REST API framework
+- **Uvicorn** (0.24+) - ASGI server
+- **Pydantic** (2.5+) - Data validation
+
+### AI Integration
+- **OpenAI** (1.3+) - GPT integration
+- **Anthropic** (0.7+) - Claude integration
+
+### Development Tools (Optional)
+- **pytest** - Unit testing
+- **black** - Code formatter
+- **flake8** - Linter
+- **bandit** - Security checker
+- **safety** - Dependency vulnerability scanner
 
 All optimized for Debian/Linux with BLAS/LAPACK acceleration.
 
@@ -307,14 +348,155 @@ Skyfield requires internet on first run to download ephemeris:
 python3 -c "from skyfield import api; api.load('de421.bsp')"
 ```
 
+## AI-Powered Features
+
+Astrologico includes advanced AI interpretation modules for astrological analysis:
+
+### Supported AI Providers
+- **OpenAI** (GPT-4, GPT-3.5) - Professional-grade interpretation
+- **Anthropic Claude** - Advanced multi-perspective analysis
+- **Template Fallback** - Offline interpretation when APIs are unavailable
+
+### Key AI Capabilities
+- 🤖 **Natural Language Interpretation** - Explain aspects in human-friendly language
+- 📊 **Chart Summary Generation** - Create comprehensive chart narratives
+- 💕 **Compatibility Analysis** - AI-powered relationship analysis
+- 🔮 **Pattern Recognition** - Identify astrological life patterns
+- 🎯 **Personal Recommendations** - Generate actionable guidance
+
+For detailed AI features, see [AI_FEATURES.md](./AI_FEATURES.md)
+
+## REST API Server
+
+Astrologico includes a full-featured FastAPI server with 20+ endpoints:
+
+```bash
+# Start API server (requires Python and dependencies)
+source venv/bin/activate
+python3 api_server.py
+
+# API will be available at http://localhost:8000
+# Swagger UI: http://localhost:8000/docs
+# ReDoc: http://localhost:8000/redoc
+```
+
+### Available Endpoints
+
+**Core Calculations:**
+- `GET /api/v1/chart` - Generate astrological chart
+- `GET /api/v1/planets` - Get planetary positions
+- `GET /api/v1/aspects` - Calculate aspects
+- `GET /api/v1/moon` - Get moon phase data
+
+**AI Features:**
+- `POST /api/v1/interpret` - AI interpretation
+- `POST /api/v1/ask` - Ask questions about charts
+- `POST /api/v1/compatibility` - Relationship compatibility
+- `POST /api/v1/analysis/patterns` - Pattern analysis
+
+**Utilities:**
+- `GET /api/v1/status` - Server health check
+- `GET /api/v1/documentation` - API documentation
+
+See [API Documentation](./AI_FEATURES.md) for complete endpoint details.
+
+## Docker Deployment
+
+### Build Docker Image
+
+```bash
+docker build -t astrologico:latest .
+```
+
+### Run with Docker Compose
+
+```bash
+docker-compose up -d
+```
+
+### Verify Container
+
+```bash
+# Check if API is responding
+curl http://localhost:8000/api/v1/status
+
+# View logs
+docker-compose logs -f api
+```
+
+### Environment Configuration
+
+Create `.env` file for Docker deployment:
+
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-your-key-here
+ANTHROPIC_API_KEY=sk-ant-your-key-here
+ALLOWED_ORIGINS=https://yourdomain.com
+API_PORT=8000
+```
+
+## Continuous Integration / Continuous Deployment
+
+Astrologico uses GitHub Actions for automated testing and quality assurance:
+
+### Available Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **Tests** | Push/PR | Run pytest across Python 3.8-3.13 |
+| **Security** | Push/PR/Daily | Bandit, Safety, secret scanning |
+| **Code Quality** | Push/PR | Black, Flake8, MyPy, Pylint |
+| **Docker Build** | Push/PR | Build and test Docker image |
+| **Dependencies** | Weekly | Check for outdated/vulnerable packages |
+
+### View CI/CD Status
+
+All workflows: https://github.com/ME0094/astrologico/actions
+
+### Running Tests Locally
+
+```bash
+# Install test dependencies
+pip install pytest pytest-cov pytest-asyncio
+
+# Run tests with coverage
+pytest tests/ -v --cov=. --cov-report=html
+
+# Run specific test file
+pytest tests/test_astrologico.py -v
+
+# Run security checks
+bandit -r . -ll
+safety check
+```
+
 ## Contributing
 
 Contributions welcome! Areas for enhancement:
 - Additional astrological calculations (houses, fixed stars)
-- REST API server
+- Enhanced AI interpretations
 - Web UI dashboard
 - Real-time transit alerts
 - Compatibility with other astronomical software
+- Performance optimizations
+- Additional language support for AI
+
+### Development Setup
+
+```bash
+# Clone and setup
+git clone https://github.com/ME0094/astrologico.git
+cd astrologico
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+
+# Run tests before submitting PR
+pytest tests/ -v
+bash run-linting.sh
+```
 
 ## License
 

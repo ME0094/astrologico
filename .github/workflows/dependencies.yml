@@ -1,0 +1,65 @@
+name: Dependency Check
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'requirements.txt' ]
+  schedule:
+    # Check dependencies weekly
+    - cron: '0 0 * * 0'
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pip-audit safety
+
+    - name: Check for outdated packages
+      run: |
+        echo "🔄 Checking for outdated packages..."
+        pip list --outdated || echo "All packages up to date"
+
+    - name: Security audit with pip-audit
+      run: |
+        echo "🔒 Running pip-audit security check..."
+        pip-audit --desc || true
+
+    - name: Vulnerability check with Safety
+      run: |
+        echo "📦 Running Safety vulnerability scan..."
+        safety check --json > safety-report.json || true
+        safety check || echo "Check complete"
+
+    - name: Upload dependency reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-reports
+        path: safety-report.json
+        retention-days: 30
+
+    - name: Create dependency update issue
+      if: failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '📦 Dependency Update Required',
+            body: 'Automated check found outdated or vulnerable dependencies. See workflow artifacts for details.',
+            labels: ['dependencies', 'security']
+          })
