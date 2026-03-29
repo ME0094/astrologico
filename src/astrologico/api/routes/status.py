@@ -1,15 +1,19 @@
 """
 Status and health check routes.
 
-Provides API health and status information.
+Provides API health and status information, including metrics and logging details.
 """
 
+from typing import Dict, Any
 from fastapi import APIRouter
 from src.astrologico.api.models import HealthCheckResponse, StatusResponse
 from src.astrologico.api.dependencies import get_calculator, get_interpreter
 from src.astrologico.api.settings import settings
+from src.astrologico.api.middleware import PerformanceMonitoringMiddleware
+from src.astrologico.api.logging_config import get_logger
 
 router = APIRouter(prefix="/api/v1", tags=["status"])
+logger = get_logger(__name__)
 
 
 @router.get("/health", response_model=HealthCheckResponse)
@@ -20,6 +24,8 @@ async def health_check():
     Returns health status of calculator and interpreter components.
     """
     interpreter = get_interpreter()
+    
+    logger.info("Health check performed")
     
     return {
         "status": "healthy",
@@ -40,6 +46,10 @@ async def get_status():
     - Available endpoints
     """
     interpreter = get_interpreter()
+    
+    logger.info("Status check performed")
+    
+    return {
         "api_version": settings.api_version,
         "calculator_status": "operational",
         "interpreter_status": "operational" if interpreter.client else "no_api_key",
@@ -59,6 +69,59 @@ async def get_status():
     }
 
 
+@router.get("/metrics")
+async def get_metrics() -> Dict[str, Any]:
+    """
+    Get API performance metrics.
+    
+    Returns performance statistics for all endpoints:
+    - Request count
+    - Response times (min, max, average)
+    - Error counts and rates
+    
+    Note:
+        Only available if PerformanceMonitoringMiddleware is enabled.
+    """
+    metrics = PerformanceMonitoringMiddleware.get_metrics()
+    
+    # Add summary metrics
+    total_requests = sum(m["count"] for m in metrics.values())
+    total_errors = sum(m["errors"] for m in metrics.values())
+    
+    logger.info(f"Metrics retrieved: {total_requests} total requests, {total_errors} errors")
+    
+    return {
+        "summary": {
+            "total_requests": total_requests,
+            "total_errors": total_errors,
+            "error_rate": (
+                total_errors / total_requests
+                if total_requests > 0
+                else 0.0
+            ),
+            "endpoints": len(metrics)
+        },
+        "endpoints": metrics
+    }
+
+
+@router.delete("/metrics")
+async def reset_metrics() -> Dict[str, str]:
+    """
+    Reset performance metrics.
+    
+    Clears all collected performance data.
+    Useful for clearing old metrics during testing or analysis.
+    
+    Returns:
+        Confirmation message
+    """
+    PerformanceMonitoringMiddleware.reset_metrics()
+    logger.info("Performance metrics reset")
+    
+    return {"message": "Metrics reset successfully"}
+
+
 @router.get("/")
 async def root():
     """
@@ -66,6 +129,8 @@ async def root():
     
     Returns basic API metadata and documentation link.
     """
+    logger.debug("Root endpoint accessed")
+    
     return {
         "name": settings.api_title,
         "version": settings.api_version,

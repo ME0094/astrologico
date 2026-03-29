@@ -2,6 +2,7 @@
 API module for Astrologico.
 
 Provides FastAPI-based REST API for astrological calculations and AI interpretation.
+Includes request logging, error handling, performance monitoring, and metrics.
 """
 
 from src.astrologico.api.app import create_app, app
@@ -26,23 +27,60 @@ from src.astrologico.api.utils import (
     validate_and_parse_location,
     standardize_response
 )
+from src.astrologico.api.logging_config import (
+    setup_logging,
+    get_logger,
+    get_log_config
+)
+from src.astrologico.api.error_handling import (
+    ErrorResponse,
+    ErrorHandlingMiddleware,
+    HTTPExceptionHandler
+)
+from src.astrologico.api.middleware import (
+    RequestLoggingMiddleware,
+    PerformanceMonitoringMiddleware,
+    RequestContextMiddleware
+)
 
 __all__ = [
+    # Core
     'app',
     'create_app',
     'settings',
+    
+    # Models
     'ChartRequest',
     'ChartResponse',
     'CompatibilityRequest',
     'QuestionRequest',
     'LocationInput',
     'DateTimeInput',
+    
+    # Dependencies
     'get_calculator',
     'get_interpreter',
     'reset_dependencies',
+    
+    # Utilities
     'validate_coordinates',
     'parse_datetime',
     'format_chart_response',
     'validate_and_parse_location',
-    'standardize_response'
+    'standardize_response',
+    
+    # Logging
+    'setup_logging',
+    'get_logger',
+    'get_log_config',
+    
+    # Error Handling
+    'ErrorResponse',
+    'ErrorHandlingMiddleware',
+    'HTTPExceptionHandler',
+    
+    # Middleware
+    'RequestLoggingMiddleware',
+    'PerformanceMonitoringMiddleware',
+    'RequestContextMiddleware'
 ]
