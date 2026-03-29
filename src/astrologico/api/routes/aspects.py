@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional, List, Dict
 from fastapi import APIRouter, HTTPException, Query
 from src.astrologico.api.models import AspectsResponse, AspectData, AspectsInterpretationResponse
-from src.astrologico.core import AstrologicalCalculator
+from src.astrologico.core import AstrologicalCalculator, validate_latitude, validate_longitude
 from src.astrologico.ai import AstrologicalInterpreter
 from src.astrologico.api.settings import settings
 

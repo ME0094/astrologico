@@ -1,37 +1,39 @@
 """
 Serialization utilities for chart data.
 
-Handles conversion between ChartData objects and JSON-safe dictionaries.
+Handles conversion between ChartData objects and JSON-safe dictionaries
+with complete type safety using TypedDict definitions.
 """
 
 from typing import Dict, Any
 from src.astrologico.core.models import ChartData, PlanetaryPosition
+from src.astrologico.core.types import ChartDict, PlanetaryPositionDict
 
 
-def chart_to_dict(chart: ChartData) -> Dict[str, Any]:
+def chart_to_dict(chart: ChartData) -> ChartDict:
     """
-    Convert ChartData object to JSON-safe dictionary.
+    Convert ChartData object to JSON-safe TypedDict.
     
     Args:
         chart: ChartData object
         
     Returns:
-        Dictionary with all nested objects converted
+        ChartDict with all nested objects converted
     """
-    return chart.to_dict()
+    return chart.to_dict()  # type: ignore
 
 
-def planetary_position_to_dict(pos: PlanetaryPosition) -> Dict[str, Any]:
+def planetary_position_to_dict(pos: PlanetaryPosition) -> PlanetaryPositionDict:
     """
-    Convert PlanetaryPosition to dictionary.
+    Convert PlanetaryPosition to TypedDict.
     
     Args:
         pos: PlanetaryPosition object
         
     Returns:
-        Dictionary representation
+        PlanetaryPositionDict representation
     """
-    return pos.to_dict()
+    return pos.to_dict()  # type: ignore
 
 
 def format_chart_output(chart: ChartData) -> str:

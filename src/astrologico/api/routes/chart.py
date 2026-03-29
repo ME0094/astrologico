@@ -48,7 +48,7 @@ def _parse_datetime(datetime_input: DateTimeInput) -> datetime:
     )
 
 
-def _format_chart_for_response(chart) -> dict:
+def _format_chart_for_response(chart: Any) -> dict:  # Returns dict ready for Pydantic validation
     """Format ChartData object to dictionary."""
     planets_data = {}
     for name, pos in chart.planets.items():

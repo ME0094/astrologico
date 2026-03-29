@@ -16,7 +16,11 @@ from src.astrologico.api.models import (
     TransitRequest,
     TransitsResponse
 )
-from src.astrologico.core import AstrologicalCalculator
+from src.astrologico.core import (
+    AstrologicalCalculator,
+    validate_latitude,
+    validate_longitude
+)
 from src.astrologico.ai import AstrologicalInterpreter
 from src.astrologico.api.settings import settings
 

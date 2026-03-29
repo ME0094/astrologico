@@ -38,7 +38,7 @@ async def get_planets(
     try:
         # Parse datetime
         if now:
-            dt = datetime.utcnow()
+            dt: datetime = datetime.utcnow()
         elif date:
             try:
                 dt = datetime.fromisoformat(date)

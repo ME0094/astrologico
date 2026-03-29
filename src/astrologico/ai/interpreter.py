@@ -77,7 +77,7 @@ class AstrologicalInterpreter:
             print(f"Warning: Could not import {self.api_provider} client: {e}")
             self.client = None
 
-    def interpret_aspects(self, aspects: List[Dict]) -> str:
+    def interpret_aspects(self, aspects: List[Dict[str, Any]]) -> str:
         """
         Generate AI interpretation of planetary aspects.
 
@@ -162,7 +162,7 @@ Keep it concise and practical."""
             print(f"Warning: AI moon interpretation failed: {e}")
             return self._template_moon_interpretation(phase_name)
 
-    def generate_chart_summary(self, chart_data: Dict) -> str:
+    def generate_chart_summary(self, chart_data: Dict[str, Any]) -> str:
         """
         Generate comprehensive AI summary of astrological chart.
 
@@ -206,7 +206,7 @@ Format as a readable, flowing narrative."""
             print(f"Warning: AI chart summary failed: {e}")
             return self._template_chart_summary(chart_data)
 
-    def analyze_compatibility(self, chart1: Dict, chart2: Dict) -> str:
+    def analyze_compatibility(self, chart1: Dict[str, Any], chart2: Dict[str, Any]) -> str:
         """
         Analyze astrological compatibility between two charts.
 
