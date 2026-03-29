@@ -6,9 +6,9 @@ Provides endpoints for moon phase calculations and interpretation.
 
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
-from src.astrologico.api.models import MoonResponse, MoonInterpretationResponse
-from src.astrologico.api.dependencies import get_calculator, get_interpreter
+from fastapi import APIRouter, HTTPException, Query, Depends
+from astrologico.api.models import MoonResponse, MoonInterpretationResponse
+from astrologico.api.dependencies import get_calculator, get_interpreter, verify_ai_api_key
 
 router = APIRouter(prefix="/api/v1", tags=["moon"])
 
@@ -68,7 +68,8 @@ async def get_moon(
 
 @router.get("/interpret/moon", response_model=MoonInterpretationResponse)
 async def interpret_moon(
-    phase: float = Query(..., ge=0, le=1, description="Moon phase (0=new, 0.5=full)")
+    phase: float = Query(..., ge=0, le=1, description="Moon phase (0=new, 0.5=full)"),
+    api_key: str = Depends(verify_ai_api_key)
 ):
     """
     Get AI interpretation of moon phase.

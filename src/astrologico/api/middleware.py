@@ -12,7 +12,7 @@ from typing import Callable, Dict, Any, Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-from src.astrologico.api.settings import settings
+from astrologico.api.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -261,8 +261,92 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class RateLimitingMiddleware(BaseHTTPMiddleware):
+    """
+    Simple in-memory rate limiting middleware using sliding window counter.
+    
+    Features:
+    - Track requests per client IP
+    - Sliding window rate limiting
+    - Configurable via settings
+    - Returns 429 Too Many Requests on limit exceeded
+    - Logs rate limit violations
+    """
+    
+    def __init__(self, app, requests_per_period: int, period_seconds: int):
+        """
+        Initialize rate limiting middleware.
+        
+        Args:
+            app: FastAPI app
+            requests_per_period: Max requests allowed in time period
+            period_seconds: Time period in seconds
+        """
+        super().__init__(app)
+        self.requests_per_period = requests_per_period
+        self.period_seconds = period_seconds
+        # Store request timestamps per client IP: {ip: [timestamp1, timestamp2, ...]}
+        self.clients: Dict[str, list] = {}
+    
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        """
+        Rate limit requests from each client.
+        
+        Args:
+            request: HTTP request
+            call_next: Next middleware/handler
+        
+        Returns:
+            HTTP response or 429 if rate limited
+        """
+        from fastapi import HTTPException
+        from datetime import datetime, timedelta
+        
+        # Get client IP
+        client_ip = request.client.host if request.client else "unknown"
+        now = datetime.utcnow()
+        window_start = now - timedelta(seconds=self.period_seconds)
+        
+        # Initialize client if needed
+        if client_ip not in self.clients:
+            self.clients[client_ip] = []
+        
+        # Remove old requests outside current window
+        self.clients[client_ip] = [
+            timestamp for timestamp in self.clients[client_ip]
+            if timestamp > window_start
+        ]
+        
+        # Check if rate limit exceeded
+        if len(self.clients[client_ip]) >= self.requests_per_period:
+            logger.warning(
+                f"Rate limit exceeded for client {client_ip}: "
+                f"{len(self.clients[client_ip])} requests in {self.period_seconds}s"
+            )
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit exceeded: {self.requests_per_period} "
+                       f"requests per {self.period_seconds} seconds"
+            )
+        
+        # Add current request timestamp
+        self.clients[client_ip].append(now)
+        
+        # Periodic cleanup of old client entries (if not accessed for 1 hour)
+        if len(self.clients) > 1000:
+            cutoff_time = now - timedelta(hours=1)
+            self.clients = {
+                ip: timestamps for ip, timestamps in self.clients.items()
+                if timestamps and timestamps[-1] > cutoff_time
+            }
+        
+        response = await call_next(request)
+        return response
+
+
 __all__ = [
     'RequestLoggingMiddleware',
     'PerformanceMonitoringMiddleware',
-    'RequestContextMiddleware'
+    'RequestContextMiddleware',
+    'RateLimitingMiddleware'
 ]

@@ -6,10 +6,15 @@ Integrates LLM capabilities for intelligent chart analysis and insights.
 
 import json
 import os
+import logging
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 import hashlib
 from datetime import datetime
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 @dataclass
 class InterpretationCache:
@@ -72,7 +77,7 @@ class AstrologicalInterpreter:
                 from anthropic import Anthropic
                 self.client = Anthropic(api_key=self.api_key)
         except ImportError as e:
-            print(f"Warning: Could not import {self.api_provider} client: {e}")
+            logger.warning(f"Could not import {self.api_provider} client: {type(e).__name__}")
             self.client = None
     
     def interpret_aspects(self, aspects: List[Dict]) -> str:
@@ -119,7 +124,7 @@ Keep the interpretation balanced, thoughtful, and constructive."""
             self.cache.set(cache_key, interpretation)
             return interpretation
         except Exception as e:
-            print(f"Warning: AI interpretation failed: {e}")
+            logger.warning(f"AI interpretation failed: {type(e).__name__}")
             return self._template_interpretation(aspects)
     
     def interpret_moon_phase(self, phase: float) -> str:
@@ -157,7 +162,7 @@ Keep it concise and practical."""
             self.cache.set(cache_key, interpretation)
             return interpretation
         except Exception as e:
-            print(f"Warning: AI moon interpretation failed: {e}")
+            logger.warning(f"AI moon interpretation failed: {type(e).__name__}")
             return self._template_moon_interpretation(phase_name)
     
     def generate_chart_summary(self, chart_data: Dict) -> str:
@@ -201,7 +206,7 @@ Format as a readable, flowing narrative."""
             summary = self._query_ai(prompt)
             return summary
         except Exception as e:
-            print(f"Warning: AI chart summary failed: {e}")
+            logger.warning(f"AI chart summary failed: {type(e).__name__}")
             return self._template_chart_summary(chart_data)
     
     def analyze_compatibility(self, chart1: Dict, chart2: Dict) -> str:
@@ -244,7 +249,7 @@ Provide a balanced, constructive analysis."""
             analysis = self._query_ai(prompt)
             return analysis
         except Exception as e:
-            print(f"Warning: AI compatibility analysis failed: {e}")
+            logger.warning(f"AI compatibility analysis failed: {type(e).__name__}")
             return "Compatibility analysis unavailable."
     
     def answer_question(self, question: str, chart_data: Optional[Dict] = None) -> str:
@@ -276,7 +281,7 @@ Provide a clear, helpful response grounded in astrological knowledge."""
             answer = self._query_ai(prompt)
             return answer
         except Exception as e:
-            print(f"Warning: AI question answering failed: {e}")
+            logger.warning(f"AI question answering failed: {type(e).__name__}")
             return "Unable to process question."
     
     def _query_ai(self, prompt: str) -> str:

@@ -6,8 +6,8 @@ with complete type safety using TypedDict definitions.
 """
 
 from typing import Dict, Any
-from src.astrologico.core.models import ChartData, PlanetaryPosition
-from src.astrologico.core.types import ChartDict, PlanetaryPositionDict
+from astrologico.core.models import ChartData, PlanetaryPosition
+from astrologico.core.types import ChartDict, PlanetaryPositionDict
 
 
 def chart_to_dict(chart: ChartData) -> ChartDict:
@@ -46,7 +46,7 @@ def format_chart_output(chart: ChartData) -> str:
     Returns:
         Formatted string for display
     """
-    from src.astrologico.core.calculator import AstrologicalCalculator
+    from astrologico.core.calculator import AstrologicalCalculator
     
     calc = AstrologicalCalculator()
     output = []

@@ -10,6 +10,6 @@ Contains endpoint routers organized by domain:
 - status: Health checks and API status
 """
 
-from src.astrologico.api.routes import chart, planets, aspects, moon, ask, status
+from astrologico.api.routes import chart, planets, aspects, moon, ask, status
 
 __all__ = ['chart', 'planets', 'aspects', 'moon', 'ask', 'status']

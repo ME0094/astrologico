@@ -9,7 +9,7 @@ import logging
 import logging.config
 import sys
 from typing import Dict, Any
-from src.astrologico.api.settings import settings
+from astrologico.api.settings import settings
 
 
 def get_log_config() -> Dict[str, Any]:

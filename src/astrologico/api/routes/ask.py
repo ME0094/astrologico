@@ -7,8 +7,8 @@ Organized by analysis type: questions, compatibility, transits.
 
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, HTTPException
-from src.astrologico.api.models import (
+from fastapi import APIRouter, HTTPException, Depends
+from astrologico.api.models import (
     QuestionRequest,
     QuestionResponse,
     DateTimeInput,
@@ -17,8 +17,12 @@ from src.astrologico.api.models import (
     TransitRequest,
     TransitsResponse
 )
-from src.astrologico.api.dependencies import get_calculator, get_interpreter
-from src.astrologico.api.utils import parse_datetime, validate_coordinates
+from astrologico.api.dependencies import (
+    get_calculator,
+    get_interpreter,
+    verify_ai_api_key
+)
+from astrologico.api.utils import parse_datetime, validate_coordinates
 
 router = APIRouter(prefix="/api/v1", tags=["ai"])
 
@@ -62,7 +66,10 @@ def _format_chart_for_response(chart, calculator, interpreter) -> dict:
 
 
 @router.post("/ask", response_model=QuestionResponse)
-async def ask_question(request: QuestionRequest):
+async def ask_question(
+    request: QuestionRequest,
+    api_key: str = Depends(verify_ai_api_key)
+):
     """
     Ask an astrological question with optional chart context.
     

@@ -7,7 +7,7 @@ Provides common validation, parsing, and conversion functions used across multip
 from datetime import datetime
 from typing import Any, Dict, Optional, List
 from fastapi import HTTPException
-from src.astrologico.core import (
+from astrologico.core import (
     validate_latitude as core_validate_latitude,
     validate_longitude as core_validate_longitude,
     ChartDict,
@@ -15,7 +15,7 @@ from src.astrologico.core import (
     chart_dict_to_response_dict,
     InterpretationDict
 )
-from src.astrologico.api.models import DateTimeInput
+from astrologico.api.models import DateTimeInput
 
 
 def validate_coordinates(latitude: float, longitude: float) -> bool:

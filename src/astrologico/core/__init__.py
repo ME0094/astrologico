@@ -5,19 +5,19 @@ Exports the main calculator class, data models, and type definitions
 for astrological computations.
 """
 
-from src.astrologico.core.models import (
+from astrologico.core.models import (
     ChartData,
     PlanetaryPosition,
     AspectType,
     AspectData
 )
-from src.astrologico.core.calculator import AstrologicalCalculator
-from src.astrologico.core.serialization import (
+from astrologico.core.calculator import AstrologicalCalculator
+from astrologico.core.serialization import (
     chart_to_dict,
     planetary_position_to_dict,
     format_chart_output
 )
-from src.astrologico.core.types import (
+from astrologico.core.types import (
     LocationDict,
     PlanetaryPositionDict,
     AspectDict,

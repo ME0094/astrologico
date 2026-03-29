@@ -14,7 +14,7 @@ import sys
 from datetime import datetime
 from typing import Optional
 
-from src.astrologico.core import AstrologicalCalculator, format_chart_output
+from astrologico.core import AstrologicalCalculator, format_chart_output
 
 
 def parse_arguments():

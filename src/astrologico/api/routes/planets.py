@@ -7,9 +7,9 @@ Provides endpoints for planetary position calculations.
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
-from src.astrologico.api.models import PlanetsResponse
-from src.astrologico.api.dependencies import get_calculator
-from src.astrologico.api.utils import validate_coordinates
+from astrologico.api.models import PlanetsResponse
+from astrologico.api.dependencies import get_calculator
+from astrologico.api.utils import validate_coordinates
 
 router = APIRouter(prefix="/api/v1", tags=["planets"])
 

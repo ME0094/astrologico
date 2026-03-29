@@ -9,15 +9,16 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.astrologico.api.settings import settings
-from src.astrologico.api.logging_config import setup_logging, get_logger
-from src.astrologico.api.error_handling import ErrorHandlingMiddleware
-from src.astrologico.api.middleware import (
+from astrologico.api.settings import settings
+from astrologico.api.logging_config import setup_logging, get_logger
+from astrologico.api.error_handling import ErrorHandlingMiddleware
+from astrologico.api.middleware import (
     RequestLoggingMiddleware,
     PerformanceMonitoringMiddleware,
-    RequestContextMiddleware
+    RequestContextMiddleware,
+    RateLimitingMiddleware
 )
-from src.astrologico.api.routes import chart, planets, aspects, moon, ask, status
+from astrologico.api.routes import chart, planets, aspects, moon, ask, status
 
 logger = get_logger(__name__)
 
@@ -53,7 +54,7 @@ def create_app() -> FastAPI:
     )
     
     # Add middleware in order (last added is first executed)
-    # Order: RequestContext → RequestLogging → PerformanceMonitoring → CORS → ErrorHandling
+    # Order: RequestContext → RequestLogging → PerformanceMonitoring → RateLimiting → CORS → ErrorHandling
     
     # Error handling middleware (outermost, catches all exceptions)
     app.add_middleware(ErrorHandlingMiddleware)
@@ -66,6 +67,18 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"],
         allow_headers=["*"],
     )
+    
+    # Rate limiting middleware (if enabled)
+    if settings.enable_rate_limiting:
+        app.add_middleware(
+            RateLimitingMiddleware,
+            requests_per_period=settings.rate_limit_requests,
+            period_seconds=settings.rate_limit_period
+        )
+        logger.info(
+            f"Rate limiting enabled: {settings.rate_limit_requests} "
+            f"requests per {settings.rate_limit_period}s"
+        )
     
     # Performance monitoring middleware
     app.add_middleware(PerformanceMonitoringMiddleware)

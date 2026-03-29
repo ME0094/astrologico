@@ -5,9 +5,9 @@ Provides FastAPI-based REST API for astrological calculations and AI interpretat
 Includes request logging, error handling, performance monitoring, and metrics.
 """
 
-from src.astrologico.api.app import create_app, app
-from src.astrologico.api.settings import settings
-from src.astrologico.api.models import (
+from astrologico.api.app import create_app, app
+from astrologico.api.settings import settings
+from astrologico.api.models import (
     ChartRequest,
     ChartResponse,
     CompatibilityRequest,
@@ -15,29 +15,29 @@ from src.astrologico.api.models import (
     LocationInput,
     DateTimeInput
 )
-from src.astrologico.api.dependencies import (
+from astrologico.api.dependencies import (
     get_calculator,
     get_interpreter,
     reset_dependencies
 )
-from src.astrologico.api.utils import (
+from astrologico.api.utils import (
     validate_coordinates,
     parse_datetime,
     format_chart_response,
     validate_and_parse_location,
     standardize_response
 )
-from src.astrologico.api.logging_config import (
+from astrologico.api.logging_config import (
     setup_logging,
     get_logger,
     get_log_config
 )
-from src.astrologico.api.error_handling import (
+from astrologico.api.error_handling import (
     ErrorResponse,
     ErrorHandlingMiddleware,
     HTTPExceptionHandler
 )
-from src.astrologico.api.middleware import (
+from astrologico.api.middleware import (
     RequestLoggingMiddleware,
     PerformanceMonitoringMiddleware,
     RequestContextMiddleware

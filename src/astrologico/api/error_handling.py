@@ -11,7 +11,7 @@ from typing import Callable, Any, Optional
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from src.astrologico.api.settings import settings
+from astrologico.api.settings import settings
 
 logger = logging.getLogger(__name__)
 

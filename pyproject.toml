@@ -100,7 +100,9 @@ Security = "https://github.com/ME0094/astrologico/security/policy"
 
 [project.scripts]
 # CLI entry point
-astrologico = "src.astrologico.cli.main:main"
+astrologico = "astrologico.cli.main:main"
+# API server entry point
+astrologico-api = "astrologico.api.server:main"
 
 [project.gui-scripts]
 # API GUI entry point (future use)

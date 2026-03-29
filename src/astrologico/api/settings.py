@@ -91,9 +91,9 @@ class APISettings(BaseSettings):
         description="Maximum request body size in bytes"
     )
 
-    # Rate Limiting (optional)
+    # Rate Limiting
     enable_rate_limiting: bool = Field(
-        default=False,
+        default=True,
         description="Enable rate limiting"
     )
     rate_limit_requests: int = Field(
@@ -103,6 +103,24 @@ class APISettings(BaseSettings):
     rate_limit_period: int = Field(
         default=60,
         description="Rate limit period in seconds"
+    )
+
+    # Authentication & Security
+    require_api_key: bool = Field(
+        default=False,
+        description="Require API key for all requests (especially for AI endpoints)"
+    )
+    api_key_header: str = Field(
+        default="X-API-Key",
+        description="Header name for API key authentication"
+    )
+    api_key: str = Field(
+        default="",
+        description="API key for securing endpoints (empty = disabled)"
+    )
+    require_api_key_for_ai: bool = Field(
+        default=True,
+        description="Require API key specifically for AI/LLM endpoints"
     )
 
     @validator('ai_provider')
@@ -119,12 +137,72 @@ class APISettings(BaseSettings):
             raise ValueError("api_port must be between 1 and 65535")
         return v
 
-    @validator('allowed_origins')
-    def validate_origins(cls, v: List[str]) -> List[str]:
-        """Validate CORS origins are not empty."""
-        if not v and cls.environment == "production":
-            raise ValueError("allowed_origins cannot be empty in production")
+    @validator('api_host')
+    def validate_host(cls, v: str, values) -> str:
+        """
+        Validate API host binding.
+        
+        In production, strongly recommend localhost or specific IPs.
+        0.0.0.0 is allowed but should be behind a reverse proxy.
+        """
+        environment = values.get('environment', 'development')
+        if environment == "production" and v == "0.0.0.0":
+            import warnings
+            warnings.warn(
+                "SECURITY WARNING: API.host=0.0.0.0 in production. "
+                "This is dangerous without a reverse proxy. "
+                "Use 127.0.0.1 or a specific IP.",
+                SecurityWarning
+            )
         return v
+
+    @validator('allowed_origins')
+    def validate_origins(cls, v: List[str], values) -> List[str]:
+        """
+        Validate CORS origins are secure.
+        
+        - Cannot be empty in production
+        - Wildcard "*" cannot be used with allow_credentials=True
+        - HTTPS required in production (unless localhost/127.0.0.1)
+        """
+        environment = values.get('environment', 'development')
+        allow_credentials = values.get('allow_credentials', True)
+        
+        if not v and environment == "production":
+            raise ValueError("allowed_origins cannot be empty in production")
+        
+        # Check for dangerous wildcard configuration
+        if "*" in v and allow_credentials:
+            raise ValueError(
+                "SECURITY ERROR: Cannot use wildcard '*' in CORS origins "
+                "with allow_credentials=True. This is a security vulnerability. "
+                "Specify explicit origins instead."
+            )
+        
+        # In production, require HTTPS for security
+        if environment == "production":
+            for origin in v:
+                if not origin.startswith(("http://localhost", "http://127.0.0.1", "https://")):
+                    import warnings
+                    warnings.warn(
+                        f"SECURITY WARNING: HTTP origin in production: {origin}. "
+                        "HTTPS is recommended for production deployments.",
+                        SecurityWarning
+                    )
+        
+        return v
+
+    def requires_api_key_for_ai(self) -> bool:
+        """Check if API key is required for AI/LLM endpoints."""
+        return self.require_api_key_for_ai or self.require_api_key
+
+    def is_api_key_valid(self, key: str) -> bool:
+        """Verify if provided API key matches configured key."""
+        if not self.api_key:
+            return False
+        # Use constant-time comparison to prevent timing attacks
+        import hmac
+        return hmac.compare_digest(key, self.api_key)
 
     class Config:
         """Pydantic config."""

@@ -6,10 +6,10 @@ Provides endpoints for planetary aspect detection and analysis.
 
 from datetime import datetime
 from typing import Optional, List, Dict
-from fastapi import APIRouter, HTTPException, Query
-from src.astrologico.api.models import AspectsResponse, AspectData, AspectsInterpretationResponse
-from src.astrologico.api.dependencies import get_calculator, get_interpreter
-from src.astrologico.api.utils import validate_coordinates
+from fastapi import APIRouter, HTTPException, Query, Depends
+from astrologico.api.models import AspectsResponse, AspectData, AspectsInterpretationResponse
+from astrologico.api.dependencies import get_calculator, get_interpreter, verify_ai_api_key
+from astrologico.api.utils import validate_coordinates
 
 router = APIRouter(prefix="/api/v1", tags=["aspects"])
 
@@ -83,7 +83,10 @@ async def get_aspects(
 
 
 @router.post("/interpret/aspects", response_model=AspectsInterpretationResponse)
-async def interpret_aspects(aspects: List[Dict]):
+async def interpret_aspects(
+    aspects: List[Dict],
+    api_key: str = Depends(verify_ai_api_key)
+):
     """
     Get AI interpretation of planetary aspects.
     

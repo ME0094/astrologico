@@ -1,0 +1,135 @@
+version: '3.8'
+
+# Production Docker Compose configuration for Astrologico
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: astrologico-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - astrologico-api
+    networks:
+      - astrologico-network
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  astrologico-api:
+    image: ghcr.io/me0094/astrologico:latest
+    container_name: astrologico-api
+    
+    # Remove port exposure (use nginx instead)
+    expose:
+      - "8000"
+    
+    environment:
+      - ASTROLOGICO_ENV=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=false
+      - LOG_LEVEL=warning
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://astrologico.dev}
+      - ENABLE_RATE_LIMITING=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_PERIOD=60
+    
+    volumes:
+      - astrologico-data:/app/data
+      - astrologico-logs:/app/logs
+      - /etc/letsencrypt:/app/certs:ro
+    
+    restart: always
+    
+    # Production health checks
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '1'
+          memory: 512M
+    
+    networks:
+      - astrologico-network
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service=astrologico-api"
+
+  # Optional: Redis for caching (uncomment if needed)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: astrologico-redis
+  #   command: redis-server --requirepass ${REDIS_PASSWORD}
+  #   volumes:
+  #     - redis-data:/data
+  #   networks:
+  #     - astrologico-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+  #     interval: 10s
+  #     timeout: 3s
+  #     retries: 5
+
+  # Optional: Database (uncomment and configure if needed)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: astrologico-postgres
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB:-astrologico}
+  #     POSTGRES_USER: ${POSTGRES_USER:-astrologico}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   networks:
+  #     - astrologico-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+networks:
+  astrologico-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  astrologico-data:
+    driver: local
+  astrologico-logs:
+    driver: local
+  # redis-data:
+  #   driver: local
+  # postgres-data:
+  #   driver: local

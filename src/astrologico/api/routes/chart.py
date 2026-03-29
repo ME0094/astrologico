@@ -8,7 +8,7 @@ Routes are organized by chart-related operations.
 from datetime import datetime
 from typing import Optional, Any
 from fastapi import APIRouter, HTTPException, Query
-from src.astrologico.api.models import (
+from astrologico.api.models import (
     ChartRequest,
     DateTimeInput,
     LocationInput,
@@ -17,9 +17,9 @@ from src.astrologico.api.models import (
     LocationData,
     AspectData
 )
-from src.astrologico.api.dependencies import get_calculator, get_interpreter
-from src.astrologico.api.utils import parse_datetime, validate_coordinates
-from src.astrologico.core import AspectDict
+from astrologico.api.dependencies import get_calculator, get_interpreter
+from astrologico.api.utils import parse_datetime, validate_coordinates
+from astrologico.core import AspectDict
 
 router = APIRouter(prefix="/api/v1", tags=["chart"])
 

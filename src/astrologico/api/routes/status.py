@@ -6,11 +6,11 @@ Provides API health and status information, including metrics and logging detail
 
 from typing import Dict, Any
 from fastapi import APIRouter
-from src.astrologico.api.models import HealthCheckResponse, StatusResponse
-from src.astrologico.api.dependencies import get_calculator, get_interpreter
-from src.astrologico.api.settings import settings
-from src.astrologico.api.middleware import PerformanceMonitoringMiddleware
-from src.astrologico.api.logging_config import get_logger
+from astrologico.api.models import HealthCheckResponse, StatusResponse
+from astrologico.api.dependencies import get_calculator, get_interpreter
+from astrologico.api.settings import settings
+from astrologico.api.middleware import PerformanceMonitoringMiddleware
+from astrologico.api.logging_config import get_logger
 
 router = APIRouter(prefix="/api/v1", tags=["status"])
 logger = get_logger(__name__)

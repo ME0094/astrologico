@@ -5,7 +5,7 @@ Provides AI-powered analysis, chart interpretation, and intelligent Q&A
 using OpenAI or Anthropic backends.
 """
 
-from src.astrologico.ai.interpreter import (
+from astrologico.ai.interpreter import (
     AstrologicalInterpreter,
     InterpretationCache
 )

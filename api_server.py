@@ -2,7 +2,36 @@
 """
 REST API for Astrologico with AI-powered features.
 Built with FastAPI for high-performance astrological analysis.
+
+⚠️  DEPRECATED: This module is legacy and maintained for backwards compatibility only.
+
+Please use the modern implementation instead:
+- GitHub: src/astrologico/api/app.py
+- Command-line: astrologico-api
+- Docker: uvicorn src.astrologico.api.app:app
+
+The modern implementation provides:
+✅ Proper error handling (no sensitive info leakage)
+✅ Authentication support for AI endpoints
+✅ Rate limiting
+✅ Structured logging
+✅ Better separation of concerns
+
+To migrate, update your imports from:
+    from api_server import app
+To:
+    from src.astrologico.api.app import create_app
+    app = create_app()
+
+This file will be removed in a future release.
 """
+
+import warnings
+warnings.warn(
+    "api_server.py is deprecated. Use src.astrologico.api.app instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 from datetime import datetime
 from typing import Optional, Dict, List

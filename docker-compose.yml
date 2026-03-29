@@ -5,34 +5,79 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        PYTHON_VERSION: "3.13"
     container_name: astrologico-api
+    image: astrologico:latest
+    
+    # Port mappings
     ports:
       - "8000:8000"
+    
+    # Environment variables
     environment:
+      - ASTROLOGICO_ENV=production
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - DEBUG=false
+      - LOG_LEVEL=info
       - AI_PROVIDER=${AI_PROVIDER:-openai}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8000}
+      - ENABLE_RATE_LIMITING=${ENABLE_RATE_LIMITING:-true}
+      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
+      - RATE_LIMIT_PERIOD=${RATE_LIMIT_PERIOD:-60}
+    
+    # Volume mounts for persistent data
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-      - ./cache:/app/cache
       - ./.env:/app/.env:ro
+    
+    # Restart policy
     restart: unless-stopped
+    
+    # Health check configuration
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/status/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 40s
+    
+    # Resource limits (production)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Networking
     networks:
       - astrologico-network
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+# Network configuration for service discovery
 networks:
   astrologico-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
+# Volume definitions
 volumes:
   data:
+    driver: local
   logs:
-  cache:
+    driver: local

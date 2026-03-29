@@ -12,7 +12,7 @@ import ephem
 import numpy as np
 from skyfield import api, almanac
 
-from src.astrologico.core.models import ChartData, PlanetaryPosition
+from astrologico.core.models import ChartData, PlanetaryPosition
 
 # Load ephemeris data at module level
 try:

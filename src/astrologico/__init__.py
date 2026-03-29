@@ -16,7 +16,7 @@ __version__ = "2.0.0"
 __author__ = "Astrologico Team"
 __license__ = "MIT"
 
-from src.astrologico.core import (
+from astrologico.core import (
     AstrologicalCalculator,
     ChartData,
     PlanetaryPosition,
@@ -26,10 +26,10 @@ from src.astrologico.core import (
     planetary_position_to_dict,
     format_chart_output
 )
-from src.astrologico.ai import AstrologicalInterpreter
-from src.astrologico.api import app, create_app, settings
-from src.astrologico.cli import main as cli_main
-from src.astrologico.client import AstrologicoAPIClient
+from astrologico.ai import AstrologicalInterpreter
+from astrologico.api import app, create_app, settings
+from astrologico.cli import main as cli_main
+from astrologico.client import AstrologicoAPIClient
 
 __all__ = [
     # Core
