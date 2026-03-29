@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  astrologico-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: astrologico-api
+    ports:
+      - "8000:8000"
+    environment:
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    networks:
+      - astrologico-network
+
+networks:
+  astrologico-network:
+    driver: bridge
+
+volumes:
+  data:
+  logs:
+  cache:
