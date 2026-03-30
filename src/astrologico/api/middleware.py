@@ -8,6 +8,7 @@ includes request correlation IDs for tracing, and monitors endpoint usage.
 import logging
 import time
 import uuid
+from collections import deque
 from typing import Callable, Dict, Any, Optional
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -271,6 +272,11 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
     - Configurable via settings
     - Returns 429 Too Many Requests on limit exceeded
     - Logs rate limit violations
+
+    Implementation note: per-client timestamps are stored in a ``deque`` so
+    that expired entries can be discarded in O(1) amortised time by popping
+    from the left, instead of rebuilding the entire list with a comprehension
+    on every request (which is O(n)).
     """
     
     def __init__(self, app, requests_per_period: int, period_seconds: int):
@@ -285,8 +291,9 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.requests_per_period = requests_per_period
         self.period_seconds = period_seconds
-        # Store request timestamps per client IP: {ip: [timestamp1, timestamp2, ...]}
-        self.clients: Dict[str, list] = {}
+        # Store request timestamps per client IP: {ip: deque([timestamp1, ...])}
+        # deque allows O(1) removal of expired entries from the left end.
+        self.clients: Dict[str, deque] = {}
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         """
@@ -309,19 +316,19 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         
         # Initialize client if needed
         if client_ip not in self.clients:
-            self.clients[client_ip] = []
+            self.clients[client_ip] = deque()
         
-        # Remove old requests outside current window
-        self.clients[client_ip] = [
-            timestamp for timestamp in self.clients[client_ip]
-            if timestamp > window_start
-        ]
+        # Remove expired entries from the left end of the deque – O(k) where k
+        # is the number of expired entries, not O(n) for all stored timestamps.
+        client_timestamps = self.clients[client_ip]
+        while client_timestamps and client_timestamps[0] <= window_start:
+            client_timestamps.popleft()
         
         # Check if rate limit exceeded
-        if len(self.clients[client_ip]) >= self.requests_per_period:
+        if len(client_timestamps) >= self.requests_per_period:
             logger.warning(
                 f"Rate limit exceeded for client {client_ip}: "
-                f"{len(self.clients[client_ip])} requests in {self.period_seconds}s"
+                f"{len(client_timestamps)} requests in {self.period_seconds}s"
             )
             raise HTTPException(
                 status_code=429,
@@ -330,9 +337,9 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
             )
         
         # Add current request timestamp
-        self.clients[client_ip].append(now)
+        client_timestamps.append(now)
         
-        # Periodic cleanup of old client entries (if not accessed for 1 hour)
+        # Periodic cleanup of stale client entries (not accessed for 1 hour)
         if len(self.clients) > 1000:
             cutoff_time = now - timedelta(hours=1)
             self.clients = {

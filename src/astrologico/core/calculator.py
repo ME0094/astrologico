@@ -36,20 +36,40 @@ class AstrologicalCalculator:
     and complete astrological charts.
     """
 
+    # Class-level constants – created once, shared across all instances
+    PLANET_NAMES = [
+        'Sun', 'Moon', 'Mercury', 'Venus', 'Mars',
+        'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'
+    ]
+
+    ZODIAC_SIGNS = [
+        'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+        'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+    ]
+
+    ASPECT_TYPES = {
+        0: 'Conjunction',
+        60: 'Sextile',
+        90: 'Square',
+        120: 'Trine',
+        180: 'Opposition'
+    }
+
     def __init__(self):
-        """Initialize the calculator with planetary names."""
-        self.planets = {
-            'Sun': None,
-            'Moon': None,
-            'Mercury': None,
-            'Venus': None,
-            'Mars': None,
-            'Jupiter': None,
-            'Saturn': None,
-            'Uranus': None,
-            'Neptune': None,
-            'Pluto': None
-        }
+        """Initialize the calculator with pre-created ephem planet objects."""
+        # Pre-create planet objects once; reuse them on every compute() call
+        self._planet_objects = [
+            ephem.Sun(),
+            ephem.Moon(),
+            ephem.Mercury(),
+            ephem.Venus(),
+            ephem.Mars(),
+            ephem.Jupiter(),
+            ephem.Saturn(),
+            ephem.Uranus(),
+            ephem.Neptune(),
+            ephem.Pluto()
+        ]
 
     def calculate_planetary_positions(self,
                                      dt: datetime,
@@ -75,25 +95,8 @@ class AstrologicalCalculator:
         observer.date = dt
 
         positions = {}
-        planet_names = [
-            'Sun', 'Moon', 'Mercury', 'Venus', 'Mars',
-            'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'
-        ]
 
-        planet_objects = [
-            ephem.Sun(),
-            ephem.Moon(),
-            ephem.Mercury(),
-            ephem.Venus(),
-            ephem.Mars(),
-            ephem.Jupiter(),
-            ephem.Saturn(),
-            ephem.Uranus(),
-            ephem.Neptune(),
-            ephem.Pluto()
-        ]
-
-        for name, planet_obj in zip(planet_names, planet_objects):
+        for name, planet_obj in zip(self.PLANET_NAMES, self._planet_objects):
             planet_obj.compute(observer)
 
             # Extract coordinates from PyEphem object
@@ -152,13 +155,6 @@ class AstrologicalCalculator:
             - orb: Orb (difference from exact aspect)
         """
         aspects = []
-        aspect_types = {
-            0: 'Conjunction',
-            60: 'Sextile',
-            90: 'Square',
-            120: 'Trine',
-            180: 'Opposition'
-        }
 
         planet_list = list(positions.items())
 
@@ -172,7 +168,7 @@ class AstrologicalCalculator:
                     diff = 360 - diff
 
                 # Check for each aspect type
-                for aspect_angle, aspect_name in aspect_types.items():
+                for aspect_angle, aspect_name in self.ASPECT_TYPES.items():
                     if abs(diff - aspect_angle) <= orb:
                         aspects.append({
                             'planet1': name1,
@@ -195,10 +191,7 @@ class AstrologicalCalculator:
         Returns:
             Tuple of (zodiac sign name, position in sign in degrees 0-30)
         """
-        signs = [
-            'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
-            'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
-        ]
+        signs = self.ZODIAC_SIGNS
         normalized = longitude % 360
         sign_index = int(normalized / 30)
         position = normalized % 30
