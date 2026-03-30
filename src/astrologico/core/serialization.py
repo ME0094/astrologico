@@ -5,9 +5,21 @@ Handles conversion between ChartData objects and JSON-safe dictionaries
 with complete type safety using TypedDict definitions.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from astrologico.core.models import ChartData, PlanetaryPosition
 from astrologico.core.types import ChartDict, PlanetaryPositionDict
+
+# Lazy singleton – avoids recreating the calculator on every format_chart_output call
+_calculator: Optional[Any] = None
+
+
+def _get_calculator():
+    """Return the module-level AstrologicalCalculator singleton."""
+    global _calculator
+    if _calculator is None:
+        from astrologico.core.calculator import AstrologicalCalculator
+        _calculator = AstrologicalCalculator()
+    return _calculator
 
 
 def chart_to_dict(chart: ChartData) -> ChartDict:
@@ -46,9 +58,7 @@ def format_chart_output(chart: ChartData) -> str:
     Returns:
         Formatted string for display
     """
-    from astrologico.core.calculator import AstrologicalCalculator
-    
-    calc = AstrologicalCalculator()
+    calc = _get_calculator()
     output = []
     output.append("\n" + "=" * 70)
     output.append("ASTROLOGICAL CHART")

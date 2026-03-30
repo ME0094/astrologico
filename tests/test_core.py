@@ -140,9 +140,8 @@ class TestAstrologicalCalculator:
         assert hasattr(chart, 'location_lon')
         
         # Verify data integrity
-        # Compare dates (may have different timezone info)
-        assert chart.datetime_utc.date() == test_datetime.date() or \
-               chart.datetime_utc == test_datetime
+        # datetime_utc is stored as an ISO format string
+        assert chart.datetime_utc == test_datetime.isoformat()
         assert chart.location_lat == lat
         assert chart.location_lon == lon
         assert isinstance(chart.planets, dict)
@@ -155,8 +154,10 @@ class TestAstrologicalCalculator:
         
         assert isinstance(chart_dict, dict)
         assert 'datetime_utc' in chart_dict
-        assert 'location_lat' in chart_dict
-        assert 'location_lon' in chart_dict
+        # to_dict() nests lat/lon under 'location'
+        assert 'location' in chart_dict
+        assert 'latitude' in chart_dict['location']
+        assert 'longitude' in chart_dict['location']
         assert 'planets' in chart_dict
         assert 'moon_phase' in chart_dict
         assert 'aspects' in chart_dict
@@ -194,7 +195,8 @@ class TestChartData:
     def test_chart_data_creation(self, test_chart_data):
         """Test ChartData instance creation."""
         assert test_chart_data is not None
-        assert isinstance(test_chart_data.datetime_utc, datetime)
+        # datetime_utc is stored as an ISO format string, not a datetime object
+        assert isinstance(test_chart_data.datetime_utc, str)
         assert isinstance(test_chart_data.planets, dict)
         assert isinstance(test_chart_data.aspects, list)
     
@@ -206,15 +208,17 @@ class TestChartData:
         assert 'datetime_utc' in chart_dict
         assert 'planets' in chart_dict
         assert 'aspects' in chart_dict
+        # lat/lon are nested under 'location'
+        assert 'location' in chart_dict
+        assert 'latitude' in chart_dict['location']
+        assert 'longitude' in chart_dict['location']
         
         # Check that planets dict is properly structured
         planets = chart_dict['planets']
         assert isinstance(planets, dict)
         for planet_name, planet_data in planets.items():
             assert isinstance(planet_data, dict)
-            if hasattr(planet_data, 'to_dict'):
-                # It's a PlanetaryPosition object
-                assert 'longitude' in planet_data
+            assert 'longitude' in planet_data
 
 
 @pytest.mark.core
