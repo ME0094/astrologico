@@ -16,14 +16,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy pyproject.toml and build requirements
+# Copy project files for build
 COPY pyproject.toml README.md ./
+COPY src ./src
+COPY de421.bsp ./
 
 # Create virtual environment and install dependencies
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -e .
+    pip install .
 
 # Stage 2: Runtime
 FROM python:3.13-slim
@@ -52,9 +54,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 
-# Copy application code
-COPY --chown=nobody:nobody src/ ./src/
-COPY --chown=nobody:nobody setup.py pyproject.toml README.md ./
+# Copy ephemeris data needed at runtime
 COPY --chown=nobody:nobody de421.bsp ./
 
 # Create non-root user for security
@@ -72,4 +72,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/api/status/health || exit 1
 
 # Run the API server
-CMD ["uvicorn", "src.astrologico.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "astrologico.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
